@@ -1,24 +1,85 @@
-import logo from './logo.svg';
+import { useState } from 'react'
+import axios from 'axios';
 import './App.css';
 
+
+
+export function isValidDate(dateString) {
+  var regEx = /^\d{4}-\d{2}-\d{2}$/;
+  if(!dateString.match(regEx)) return false;  // Invalid format
+  var d = new Date(dateString);
+  var dNum = d.getTime();
+  if(!dNum && dNum !== 0) return false; // NaN value, Invalid date
+  return d.toISOString().slice(0,10) === dateString;
+}
+
 function App() {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([])
+  const [error , setError] = useState(false)
+  const [flag, setFlag] = useState(false)
+
+  const BASE_URL = 'https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos'
+  const API_KEY = 'mfZ709PhAdgsZ91bOioBS1V3W3XeSm8gQ0N0TkDz'
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    const DATE = query
+    if(!isValidDate(DATE)){
+      setError(true)
+    }
+    
+    else{
+      setError(false)
+      setFlag(false)
+      const DATE_QUERY = `?earth_date=${DATE}`
+      const RAW_URL = BASE_URL+DATE_QUERY+'&api_key=mfZ709PhAdgsZ91bOioBS1V3W3XeSm8gQ0N0TkDz'
+    
+      try{
+        const response = await axios.get(RAW_URL)
+        const data = response.data
+        const filtered_repsonse = data.photos.map(image => image.img_src)    
+        if (filtered_repsonse.length === 0){
+          setFlag(true)
+        }
+        setImages(filtered_repsonse)
+
+        
+      } catch (error){
+        console.log(error)
+      }  
+    }
+  }
+
+  
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <>
+    <div style={{margin:'auto',textAlign:'center',paddingTop:'10px',fontSize:'30px'}}>
+      <label style={{}}>Enter Date in yyyy/mm/dd format</label>
+      <form onSubmit={handleSubmit}>
+      <div style={{justifyContent:'center'}}>
+        <input type='text' onChange={(e) => setQuery(e.target.value)} style={{padding:'5px',fontSize:'30px'}}/>
+        <button style={{height:'3.5em'}}>Search</button>
+      </div>
+      </form>
+      {error?
+      <label style={{color:'red'}}>Please Enter Valid Date</label>:""}
+      {flag?
+      <label>There were no images from this date</label>:""}
     </div>
+    <ul>
+      
+      {images.map((image,i) => 
+      <>
+        <li key={i}><img src={image} style={{width:"150px"}}/></li>
+        <a href={image}>{image}</a>
+      </>
+      )}
+    </ul>
+    
+   </>
   );
 }
 
