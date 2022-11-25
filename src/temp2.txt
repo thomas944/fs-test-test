@@ -1,15 +1,25 @@
 import { useState } from 'react'
 import axios from 'axios';
-
-
-
-{/*
-  2015-06-03:
-    data: data,
-    expireAt: date.now()+10* 10000
-*/}
+import './App.css';
 
 const cache = {}
+
+function setItem(key, data) {
+  cache[key] = {
+    data: data,
+    expireAt: Date.now() + (10 * 10000),
+  }
+}
+
+function getItem(key) {
+  const item = cache[key];
+  if (item !== undefined && item.expireAt > Date.now()) {
+    return item.data;
+  } else {
+    return undefined;
+  }
+}
+
 
 export function isValidDate(dateString) {
   var regEx = /^\d{4}-\d{2}-\d{2}$/;
@@ -25,23 +35,12 @@ function App() {
   const [images, setImages] = useState([])
   const [error , setError] = useState(false)
   const [flag, setFlag] = useState(false)
-  //const [cache, setCache] = useState({})
-
-  const getCache = (query) => {
-    const item = cache[query];
-    if (item !== undefined && item.expireAt > Date.now()) {
-      return item.data;
-    } else {
-      return undefined;
-    }
-  }
-
-
 
   const BASE_URL = 'https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos'
   const API_KEY = 'mfZ709PhAdgsZ91bOioBS1V3W3XeSm8gQ0N0TkDz'
 
   const getImages = async () => {
+  
     const DATE = query
     if(!isValidDate(DATE)){
       setError(true)
@@ -64,23 +63,19 @@ function App() {
         return filtered_repsonse
         
       } catch (error){
-        console.log(error)
+        //console.log(error)
       }  
     }
   }
   const handleSubmit = async (event) => {
-    event.preventDefault()
-    let data = getCache(query);
-    if (data === undefined){
-      data = await getImages();
-      cache[query] = {
-        data: data,
-        expireAt: Date.now() + (1 * 1000),
-      }
+    let images = getItem(query)
+    if (!images) {
+      images = await getImages();
+      setItem(query, images);
     }
-    setImages(data)
-    console.log(cache)
+    setImages(images)
   } 
+
   
 
   return (
@@ -98,7 +93,7 @@ function App() {
       {flag?
       <label>There were no images from this date</label>:""}
     </div>
-    {/* <ul>
+    <ul>
       
       {images.map((image,i) => 
       <>
@@ -106,12 +101,10 @@ function App() {
         <a href={image}>{image}</a>
       </>
       )}
-      </ul> */}
+    </ul>
     
    </>
   );
 }
 
 export default App;
-
-

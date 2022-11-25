@@ -1,15 +1,8 @@
 import { useState } from 'react'
 import axios from 'axios';
+import './App.css';
 
 
-
-{/*
-  2015-06-03:
-    data: data,
-    expireAt: date.now()+10* 10000
-*/}
-
-const cache = {}
 
 export function isValidDate(dateString) {
   var regEx = /^\d{4}-\d{2}-\d{2}$/;
@@ -25,23 +18,25 @@ function App() {
   const [images, setImages] = useState([])
   const [error , setError] = useState(false)
   const [flag, setFlag] = useState(false)
-  //const [cache, setCache] = useState({})
 
-  const getCache = (query) => {
-    const item = cache[query];
-    if (item !== undefined && item.expireAt > Date.now()) {
-      return item.data;
-    } else {
-      return undefined;
+  const cacheTime = 1000
+  const cache = {}
+  let cacheTimer = 0
+
+  const getCacheTimer = time => {
+    const now = new Date().getTime()
+    if (cacheTimer < now + time){
+      cacheTimer = now + time
     }
+    return cacheTimer
   }
-
 
 
   const BASE_URL = 'https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos'
   const API_KEY = 'mfZ709PhAdgsZ91bOioBS1V3W3XeSm8gQ0N0TkDz'
 
   const getImages = async () => {
+  
     const DATE = query
     if(!isValidDate(DATE)){
       setError(true)
@@ -68,18 +63,18 @@ function App() {
       }  
     }
   }
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event, time) => {
+    console.log(event)
+    console.log(`Query ${query}, Cache ${cache}`)
     event.preventDefault()
-    let data = getCache(query);
-    if (data === undefined){
-      data = await getImages();
-      cache[query] = {
-        data: data,
-        expireAt: Date.now() + (1 * 1000),
-      }
+    const now = new Date().getTime()
+    if(!cache[query] || cache[query].cacheTimer < now){
+      cache[query] = await (getImages())
+      cache[query].cacheTimer = getCacheTimer(time)
+      console.log(cache.length)
     }
-    setImages(data)
-    console.log(cache)
+    setImages(cache[query])
+    console.log(cache.length)
   } 
   
 
@@ -87,7 +82,7 @@ function App() {
     <>
     <div style={{margin:'auto',textAlign:'center',paddingTop:'10px',fontSize:'30px'}}>
       <label style={{}}>Enter Date in yyyy/mm/dd format</label>
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <form onSubmit={(e) => handleSubmit(e, cacheTime)}>
       <div style={{justifyContent:'center'}}>
         <input type='text' onChange={(e) => setQuery(e.target.value)} style={{padding:'5px',fontSize:'30px'}}/>
         <button style={{height:'3.5em'}}>Search</button>
@@ -98,7 +93,7 @@ function App() {
       {flag?
       <label>There were no images from this date</label>:""}
     </div>
-    {/* <ul>
+    { <ul>
       
       {images.map((image,i) => 
       <>
@@ -106,12 +101,10 @@ function App() {
         <a href={image}>{image}</a>
       </>
       )}
-      </ul> */}
+    </ul> }
     
    </>
   );
 }
 
 export default App;
-
-
