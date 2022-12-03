@@ -1,15 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios';
+import { getItem, setItem } from './data/cache' 
 
-
-
-{/*
-  2015-06-03:
-    data: data,
-    expireAt: date.now()+10* 10000
-*/}
-
-const cache = {}
 
 export function isValidDate(dateString) {
   var regEx = /^\d{4}-\d{2}-\d{2}$/;
@@ -25,18 +17,6 @@ function App() {
   const [images, setImages] = useState([])
   const [error , setError] = useState(false)
   const [flag, setFlag] = useState(false)
-  //const [cache, setCache] = useState({})
-
-  const getCache = (query) => {
-    const item = cache[query];
-    if (item !== undefined && item.expireAt > Date.now()) {
-      return item.data;
-    } else {
-      return undefined;
-    }
-  }
-
-
 
   const BASE_URL = 'https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos'
   const API_KEY = 'mfZ709PhAdgsZ91bOioBS1V3W3XeSm8gQ0N0TkDz'
@@ -68,18 +48,15 @@ function App() {
       }  
     }
   }
+  
   const handleSubmit = async (event) => {
     event.preventDefault()
-    let data = getCache(query);
+    let data = getItem(query);
     if (data === undefined){
       data = await getImages();
-      cache[query] = {
-        data: data,
-        expireAt: Date.now() + (1 * 1000),
-      }
+      setItem(query, data)
     }
     setImages(data)
-    console.log(cache)
   } 
   
 
@@ -98,7 +75,7 @@ function App() {
       {flag?
       <label>There were no images from this date</label>:""}
     </div>
-    {/* <ul>
+    {<ul>
       
       {images.map((image,i) => 
       <>
@@ -106,7 +83,7 @@ function App() {
         <a href={image}>{image}</a>
       </>
       )}
-      </ul> */}
+      </ul>}
     
    </>
   );

@@ -12,8 +12,8 @@ const getItem = (query) => {
 const setItem = (key, data) => {
   cache[key] = {
     data: data,
-    expireAt: Date.now() + (1 * 1000),
+    expireAt: Date.now() + (10 * 1000),
   }
 }
 
-export default { getItem, setItem}
+export { getItem, setItem } 
